@@ -127,6 +127,16 @@ class MainWindow(QMainWindow, WindowMixin):
         use_default_label_qhbox_layout.addWidget(self.default_label_text_line)
         use_default_label_container = QWidget()
         use_default_label_container.setLayout(use_default_label_qhbox_layout)
+        self.screen_capture_title_prev = ""
+        self.screen_capture_title = QLineEdit()
+        vid_title = QLabel("Vid Title")
+        vidTitle = QHBoxLayout()
+        vidTitle.addWidget(vid_title)
+        vidTitle.addWidget(self.screen_capture_title)
+        vidTitleWidget = QWidget()
+        vidTitleWidget.setLayout(vidTitle)
+
+
 
         # Create a widget for edit and diffc button
         self.diffc_button = QCheckBox(get_str('useDifficult'))
@@ -139,6 +149,7 @@ class MainWindow(QMainWindow, WindowMixin):
         list_layout.addWidget(self.edit_button)
         list_layout.addWidget(self.diffc_button)
         list_layout.addWidget(use_default_label_container)
+        list_layout.addWidget(vidTitleWidget)
 
         # Create and add combobox for showing unique labels in group
         self.combo_box = ComboBox(self)
@@ -786,6 +797,15 @@ class MainWindow(QMainWindow, WindowMixin):
         del self.items_to_shapes[item]
         self.update_combo_box()
 
+    def load_title(self,title):
+        print ('load_title: ' + title)
+        self.screen_capture_title.setText(title)
+
+    def update_title(self):
+        if self.screen_capture_title_prev == "":
+            self.screen_capture_title.setText("")
+        else:
+            self.screen_capture_title.setText(self.screen_capture_title_prev)
     def load_labels(self, shapes):
         s = []
         for label, points, line_color, fill_color, difficult in shapes:
@@ -842,13 +862,14 @@ class MainWindow(QMainWindow, WindowMixin):
                         difficult=s.difficult)
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
+        self.screen_capture_title_prev = self.screen_capture_title.text()
         # Can add different annotation formats here
         try:
             if self.label_file_format == LabelFileFormat.PASCAL_VOC:
                 if annotation_file_path[-4:].lower() != ".xml":
                     annotation_file_path += XML_EXT
                 self.label_file.save_pascal_voc_format(annotation_file_path, shapes, self.file_path, self.image_data,
-                                                       self.line_color.getRgb(), self.fill_color.getRgb())
+                                                       self.line_color.getRgb(), self.fill_color.getRgb(),self.screen_capture_title.text())
             elif self.label_file_format == LabelFileFormat.YOLO:
                 if annotation_file_path[-4:].lower() != ".txt":
                     annotation_file_path += TXT_EXT
@@ -1026,6 +1047,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def load_file(self, file_path=None):
         """Load the specified file, or the last opened file if None."""
+        print ('load_file: ' + file_path)
+        self.update_title()
         self.reset_state()
         self.canvas.setEnabled(False)
         if file_path is None:
@@ -1105,6 +1128,8 @@ class MainWindow(QMainWindow, WindowMixin):
         return False
 
     def show_bounding_box_from_annotation_file(self, file_path):
+        print('show_bounding_box_from_annotation_file')
+        print(file_path)
         if self.default_save_dir is not None:
             basename = os.path.basename(os.path.splitext(file_path)[0])
             xml_path = os.path.join(self.default_save_dir, basename + XML_EXT)
@@ -1514,7 +1539,9 @@ class MainWindow(QMainWindow, WindowMixin):
 
         t_voc_parse_reader = PascalVocReader(xml_path)
         shapes = t_voc_parse_reader.get_shapes()
+        title =  t_voc_parse_reader.get_title()
         self.load_labels(shapes)
+        self.load_title(title)
         self.canvas.verified = t_voc_parse_reader.verified
 
     def load_yolo_txt_by_filename(self, txt_path):

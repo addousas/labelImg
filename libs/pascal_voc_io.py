@@ -14,7 +14,7 @@ ENCODE_METHOD = DEFAULT_ENCODING
 
 class PascalVocWriter:
 
-    def __init__(self, folder_name, filename, img_size, database_src='Unknown', local_img_path=None):
+    def __init__(self, folder_name, filename, img_size, database_src='Unknown', local_img_path=None, title=""):
         self.folder_name = folder_name
         self.filename = filename
         self.database_src = database_src
@@ -22,6 +22,7 @@ class PascalVocWriter:
         self.box_list = []
         self.local_img_path = local_img_path
         self.verified = False
+        self.title = title
 
     def prettify(self, elem):
         """
@@ -53,6 +54,9 @@ class PascalVocWriter:
 
         filename = SubElement(top, 'filename')
         filename.text = self.filename
+
+        title = SubElement(top,'sc_title')
+        title.text = self.title
 
         if self.local_img_path is not None:
             local_img_path = SubElement(top, 'path')
@@ -132,6 +136,7 @@ class PascalVocReader:
         self.shapes = []
         self.file_path = file_path
         self.verified = False
+        self.title = ''
         try:
             self.parse_xml()
         except:
@@ -139,7 +144,8 @@ class PascalVocReader:
 
     def get_shapes(self):
         return self.shapes
-
+    def get_title(self):
+        return self.title
     def add_shape(self, label, bnd_box, difficult):
         x_min = int(float(bnd_box.find('xmin').text))
         y_min = int(float(bnd_box.find('ymin').text))
@@ -153,6 +159,9 @@ class PascalVocReader:
         parser = etree.XMLParser(encoding=ENCODE_METHOD)
         xml_tree = ElementTree.parse(self.file_path, parser=parser).getroot()
         filename = xml_tree.find('filename').text
+        self.title = xml_tree.find('sc_title').text
+        print ('parse_xml: ', title)
+        # print (xml_tree.find('sc_title').text)
         try:
             verified = xml_tree.attrib['verified']
             if verified == 'yes':
